@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modul 6 Javascript</title>
+    <script type="text/javascript">
+            alert("Hello Gw Javascript");
+            
+            function myFunction(){
+            document.getElementById("demo").innerHTML = "Paragraph Changed."
+        }
+    </script>
+</head>
+<body>
+    <h1>Page sebuah Website</h1>
+    <h2>Javascript in Body</h2>
+
+    <button type="button" onclick="document.getElementById('demo').innerHTML = Date()">Click me to Display Date and Time.</button>
+
+    <p id="demo">Sebuah Paragraph</p>
+    <button type="button" onclick="myFunction()">COBAIN</button>
+    <script>
+        
+        document.getElementById("demo").innerHTML= "This is My First Exprerience with Javascript";
+    </script>
+</body>
+</html>

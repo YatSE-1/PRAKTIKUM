@@ -1,0 +1,864 @@
+    <!DOCTYPE html>
+    <html lang="id">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Game Lab: Eksperimen Gunung Meletus</title>
+        <style>
+            :root {
+                --bg-color: #1a1a2e;
+                --card-bg: rgba(255, 255, 255, 0.08);
+                --accent: #ff5722;
+                --secondary: #ff9800;
+            }
+
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+                color: #fff;
+                margin: 0;
+                padding: 20px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+            }
+
+            .game-container {
+                max-width: 620px;
+                width: 100%;
+                background: rgba(20, 20, 30, 0.94);
+                border-radius: 20px;
+                padding: 25px;
+                box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+                border: 2px solid rgba(255, 255, 255, 0.1);
+                text-align: center;
+            }
+
+            h1 {
+                color: var(--secondary);
+                margin-bottom: 5px;
+                font-size: 1.8rem;
+            }
+
+            .header-emojis {
+                font-size: 1.3rem;
+                margin-bottom: 15px;
+                letter-spacing: 6px;
+            }
+
+            .instruction-board {
+                background: rgba(255, 152, 0, 0.15);
+                border: 1px dashed var(--secondary);
+                padding: 12px;
+                border-radius: 10px;
+                margin-bottom: 20px;
+                font-size: 1.05rem;
+                font-weight: bold;
+                color: #ffccbc;
+                transition: all 0.3s ease;
+            }
+
+            /* Area Lab & Visual Gunung */
+            .lab-area {
+                position: relative;
+                height: 270px;
+                background: rgba(0, 0, 0, 0.5);
+                border-radius: 15px;
+                margin-bottom: 20px;
+                display: flex;
+                justify-content: center;
+                align-items: flex-end;
+                overflow: hidden;
+                border-bottom: 5px solid #3e2723;
+            }
+
+            .volcano-container {
+                position: relative;
+                width: 220px;
+                height: 170px;
+                display: flex;
+                justify-content: center;
+            }
+
+            .volcano-svg {
+                position: absolute;
+                bottom: 0;
+                z-index: 2;
+            }
+
+            /* Wadah Lab Animasi Menuang */
+            .pouring-container {
+                position: absolute;
+                top: -20px;
+                left: 20%;
+                width: 50px;
+                height: 60px;
+                z-index: 6;
+                opacity: 0;
+                transform-origin: bottom right;
+            }
+
+            @keyframes pourAction {
+                0% { top: -40px; left: 20%; opacity: 0; transform: rotate(0deg) scale(0.8); }
+                30% { top: 0px; left: 44%; opacity: 1; transform: rotate(0deg) scale(1); }
+                50% { top: 0px; left: 44%; opacity: 1; transform: rotate(-55deg) scale(1); }
+                75% { top: 0px; left: 44%; opacity: 1; transform: rotate(-55deg) scale(1); }
+                100% { top: -40px; left: 65%; opacity: 0; transform: rotate(0deg) scale(0.8); }
+            }
+
+            .pouring-container.animate-pour {
+                animation: pourAction 1.2s ease forwards;
+            }
+
+            .falling-particle {
+                position: absolute;
+                top: 25px;
+                left: 50%;
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                background: #ffffff;
+                opacity: 0;
+                z-index: 5;
+            }
+
+            @keyframes dropParticle {
+                0% { transform: translateY(0) scale(1); opacity: 0; }
+                40% { opacity: 1; }
+                100% { transform: translateY(40px) scale(0.4); opacity: 0; }
+            }
+
+            .falling-particle.animate-particle {
+                animation: dropParticle 0.5s ease-in 0.5s forwards;
+            }
+
+            /* Semburan Lava & Busa Meluber ke Lereng */
+            .eruption-fountain {
+                position: absolute;
+                bottom: 45px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 10px;
+                height: 0px;
+                z-index: 4;
+                pointer-events: none;
+            }
+
+            .eruption-fountain.active {
+                animation: fountainBurst 2s infinite ease-out;
+            }
+
+            @keyframes fountainBurst {
+                0% { height: 0px; width: 10px; box-shadow: 0 0 0px #ff3d00; opacity: 0; }
+                20% { height: 160px; width: 40px; box-shadow: 0 -20px 30px #ff3d00, 0 -60px 80px #ffeb3b, 0 -120px 120px #e91e63; opacity: 1; }
+                100% { height: 200px; width: 90px; box-shadow: 0 -50px 40px rgba(255, 61, 0, 0), 0 -140px 100px rgba(233, 30, 99, 0); opacity: 0; }
+            }
+
+            .lava-overflow {
+                position: absolute;
+                top: 35px;
+                left: 50%;
+                transform: translateX(-50%) scaleX(0);
+                width: 140px;
+                height: 40px;
+                background: radial-gradient(circle, #ffeb3b 0%, #ff5722 60%, #e91e63 100%);
+                border-radius: 20px;
+                z-index: 3;
+                opacity: 0;
+                transition: all 1s ease;
+            }
+
+            .lava-overflow.active {
+                transform: translateX(-50%) scaleX(1);
+                opacity: 0.95;
+                animation: overflowFlow 2s infinite alternate;
+            }
+
+            @keyframes overflowFlow {
+                0% { height: 40px; border-radius: 20px; }
+                100% { height: 75px; border-radius: 35px; box-shadow: 0 10px 20px #ff3d00; }
+            }
+
+            .smoke-cloud {
+                position: absolute;
+                top: 5px;
+                left: 50%;
+                transform: translateX(-50%) scale(0);
+                width: 110px;
+                height: 60px;
+                background: rgba(90, 90, 90, 0.85);
+                border-radius: 50%;
+                box-shadow: 0 0 25px rgba(40,40,40,0.7);
+                z-index: 5;
+                opacity: 0;
+                transition: transform 1s, opacity 1s;
+            }
+
+            .smoke-cloud.active {
+                transform: translateX(-50%) scale(1.6) translateY(-40px);
+                opacity: 0.9;
+                animation: smokeFloat 2s infinite alternate;
+            }
+
+            @keyframes smokeFloat {
+                0% { transform: translateX(-50%) scale(1.5) translateY(-35px); }
+                100% { transform: translateX(-50%) scale(1.7) translateY(-55px); }
+            }
+
+            .status-ingredients {
+                font-size: 0.9rem;
+                color: #b0bec5;
+                margin-bottom: 15px;
+                min-height: 25px;
+            }
+
+            .materials-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+                margin-bottom: 20px;
+            }
+
+            .material-btn {
+                background: var(--card-bg);
+                border: 2px solid rgba(255, 255, 255, 0.15);
+                padding: 12px;
+                border-radius: 12px;
+                color: white;
+                cursor: pointer;
+                transition: all 0.2s;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                font-size: 1rem;
+            }
+
+            .material-btn:hover:not(:disabled) {
+                background: rgba(255, 255, 255, 0.2);
+                border-color: var(--secondary);
+                transform: translateY(-2px);
+            }
+
+            /* Kotak Fakta Sains */
+            .science-box {
+                background: rgba(33, 150, 243, 0.15);
+                border: 1px solid rgba(33, 150, 243, 0.4);
+                padding: 12px;
+                border-radius: 10px;
+                margin-top: 15px;
+                display: none;
+                text-align: left;
+                font-size: 0.9rem;
+            }
+
+            .science-box h3 {
+                margin: 0 0 5px 0;
+                color: #64b5f6;
+            }
+
+            /* Modal Umum */
+            .modal-overlay {
+                position: fixed;
+                top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0, 0, 0, 0.75);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 100;
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.3s ease;
+            }
+
+            .modal-overlay.active {
+                opacity: 1;
+                pointer-events: auto;
+            }
+
+            .modal-card {
+                background: #21212b;
+                border: 2px solid var(--secondary);
+                padding: 25px;
+                border-radius: 16px;
+                max-width: 420px;
+                width: 90%;
+                text-align: center;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+                animation: popUpModal 0.3s ease;
+            }
+
+            @keyframes popUpModal {
+                0% { transform: scale(0.8); opacity: 0; }
+                100% { transform: scale(1); opacity: 1; }
+            }
+
+            .modal-card h2 {
+                color: var(--secondary);
+                margin-top: 0;
+            }
+
+            .modal-card p {
+                color: #cfd8dc;
+                font-size: 0.95rem;
+                margin-bottom: 15px;
+            }
+
+            .slider-group {
+                margin: 20px 0;
+                text-align: left;
+            }
+
+            .slider-group label {
+                display: block;
+                font-size: 0.9rem;
+                margin-bottom: 8px;
+                color: #ffccbc;
+            }
+
+            .slider-group input[type="range"] {
+                width: 100%;
+                accent-color: var(--secondary);
+                cursor: pointer;
+            }
+
+            .slider-value {
+                font-weight: bold;
+                color: #fff;
+                float: right;
+            }
+
+            .modal-btn {
+                background: var(--secondary);
+                color: #1a1a2e;
+                border: none;
+                padding: 10px 24px;
+                font-size: 1rem;
+                font-weight: bold;
+                border-radius: 20px;
+                cursor: pointer;
+                margin-top: 10px;
+            }
+
+            .modal-btn:hover {
+                background: #ffa726;
+            }
+
+            .quiz-options {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                margin-top: 15px;
+            }
+
+            .quiz-option-btn {
+                background: rgba(255,255,255,0.1);
+                border: 1px solid rgba(255,255,255,0.2);
+                color: white;
+                padding: 10px;
+                border-radius: 8px;
+                cursor: pointer;
+                text-align: left;
+                transition: 0.2s;
+            }
+
+            .quiz-option-btn:hover {
+                background: rgba(255,255,255,0.25);
+                border-color: var(--secondary);
+            }
+
+            .badge-box {
+                background: rgba(255, 152, 0, 0.2);
+                border: 1px solid var(--secondary);
+                padding: 10px;
+                border-radius: 10px;
+                margin: 15px 0;
+                font-weight: bold;
+                color: #ffe0b2;
+            }
+        </style>
+    </head>
+    <body>
+
+        <div class="game-container">
+            <h1>🌋 Lab Kimia: Gunung Meletus</h1>
+            <div class="header-emojis">🧪 ⚗️ 🔬 🌋 ✨</div>
+
+            <div class="instruction-board" id="instructionText">
+                Langkah 1: Pilih bahan pertama dan tentukan takarannya!
+            </div>
+
+            <!-- Area Visual Lab -->
+            <div class="lab-area">
+                <div class="volcano-container">
+                    <div class="pouring-container" id="pouringContainer">
+                        <svg viewBox="0 0 60 70" width="60" height="70">
+                            <path d="M40,35 C45,30 55,35 52,45 C50,50 42,48 40,42 Z" fill="#ffccbc" />
+                            <path d="M15,15 L45,15 L40,65 L20,65 Z" fill="rgba(255,255,255,0.2)" stroke="#fff" stroke-width="3" stroke-linejoin="round"/>
+                            <path id="beakerContent" d="M22,35 L38,35 L39,63 L21,63 Z" fill="#ffffff" />
+                        </svg>
+                    </div>
+
+                    <div class="falling-particle" id="fallingParticle"></div>
+                    <div class="lava-overflow" id="lavaOverflow"></div>
+                    <div class="eruption-fountain" id="eruptionFountain"></div>
+                    <div class="smoke-cloud" id="smokeCloud"></div>
+
+                    <svg class="volcano-svg" viewBox="0 0 200 150" width="200" height="150">
+                        <polygon points="20,150 100,25 180,150" fill="#6d4c41" stroke="#4e342e" stroke-width="4"/>
+                        <polygon points="100,25 180,150 140,150" fill="#5d4037" opacity="0.4"/>
+                        <path id="internalMagma" d="M100,140 L100,25" stroke="#ff3d00" stroke-width="0" stroke-linecap="round" fill="none" style="transition: all 0.5s ease;" />
+                        <ellipse cx="100" cy="25" rx="18" ry="7" fill="#212121"/>
+                        <ellipse cx="100" cy="27" rx="12" ry="3" fill="#111"/>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="status-ingredients" id="statusText">Isi Kawah Gunung: Kosong</div>
+
+            <!-- Tombol Pilihan Bahan -->
+            <div class="materials-grid" id="materialsGrid">
+                <button class="material-btn" id="btn-soda" onclick="openSliderModal('soda')">
+                    <svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#fff"/></svg>
+                    <span>Soda Kue</span>
+                </button>
+                <button class="material-btn" id="btn-pewarna" onclick="openSliderModal('pewarna')">
+                    <svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 2C8 8 5 11 5 15a7 7 0 0 0 14 0c0-4-3-7-7-13z" fill="#e91e63"/></svg>
+                    <span>Pewarna Makanan</span>
+                </button>
+                <button class="material-btn" id="btn-sabun" onclick="openSliderModal('sabun')">
+                    <svg width="20" height="20" viewBox="0 0 24 24">
+                        <path d="M9 2h6v2H9z" fill="#b0bec5"/>
+                        <path d="M10 4h4v2h-4z" fill="#78909c"/>
+                        <path d="M7 7h10v13a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V7z" fill="#00bcd4"/>
+                    </svg>
+                    <span>Sabun Cuci Piring</span>
+                </button>
+                <button class="material-btn" id="btn-cuka" onclick="openSliderModal('cuka')">
+                    <svg width="20" height="20" viewBox="0 0 24 24"><path d="M9 3h6v3H9zM8 7h8v14H8z" fill="#8bc34a"/></svg>
+                    <span>Cuka</span>
+                </button>
+            </div>
+
+            <button class="modal-btn" id="resetBtn" onclick="resetGame()" style="display:none; margin: 15px auto 0 auto;">🔄 Ulangi Eksperimen</button>
+
+            <!-- Kotak Fakta Sains -->
+            <div class="science-box" id="scienceBox">
+                <h3>💡 Fakta Sains Reaksi Ini:</h3>
+                <p>Cuka (asam) dan soda kue (basa) bereaksi menghasilkan gas <b>Karbon Dioksida (CO<sub>2</sub>)</b> dalam jumlah besar. Tekanan gas ini mendesak cairan ke atas menyerupai magma panas dari dalam perut bumi yang meletus dahsyat!</p>
+            </div>
+        </div>
+
+        <!-- Modal Slider Takaran Bahan -->
+        <div class="modal-overlay" id="sliderModal">
+            <div class="modal-card">
+                <h2 id="modalTitle">Atur Takaran Bahan</h2>
+                <p id="modalDesc">Sesuaikan jumlah takaran untuk hasil eksperimen optimal.</p>
+                
+                <div class="slider-group">
+                    <label id="sliderLabel">Takaran: <span class="slider-value" id="sliderValDisplay">0</span></label>
+                    <input type="range" id="materialSlider" min="10" max="500" value="50" oninput="updateSliderDisplay(this.value)">
+                </div>
+
+                <button class="modal-btn" onclick="confirmMaterial()">Tuang ke Kawah</button>
+            </div>
+        </div>
+
+        <!-- POP-UP 1: Status Hasil Meletus / Tidak Meletus -->
+        <div class="modal-overlay" id="explosionResultModal">
+            <div class="modal-card">
+                <h2 id="expResultTitle">Eksperimen Selesai!</h2>
+                <p id="expResultDesc">Deskripsi hasil letusan...</p>
+                <button class="modal-btn" onclick="openBadgeModal()">Cek Gelar Anda</button>
+            </div>
+        </div>
+
+        <!-- POP-UP 2: Gelar yang Didapat -->
+        <div class="modal-overlay" id="badgeModal">
+            <div class="modal-card">
+                <h2>🏆 Gelar Ilmuwan</h2>
+                <div class="badge-box" id="resultBadge">Gelar: -</div>
+                <p id="badgeDesc">Deskripsi pencapaian gelar...</p>
+                <button class="modal-btn" onclick="nextToQuiz()">Lanjut ke Kuis Kimia</button>
+            </div>
+        </div>
+
+        <!-- POP-UP 3: Mengerjakan Kuis -->
+        <div class="modal-overlay" id="quizModal">
+            <div class="modal-card">
+                <h2>🧪 Kuis Kilat Kimia</h2>
+                <p id="quizQuestion">Gas apa yang dihasilkan dari reaksi pencampuran soda kue dan cuka?</p>
+                <div class="quiz-options" id="quizOptions"></div>
+            </div>
+        </div>
+
+        <!-- POP-UP 4: Hasil Jawaban dari User (Feedback) -->
+        <div class="modal-overlay" id="quizFeedbackModal">
+            <div class="modal-card">
+                <h2 id="feedbackTitle">🎉 Jawaban Benar!</h2>
+                <p id="feedbackDesc">Penjelasan singkat jawaban kuis.</p>
+                <button class="modal-btn" onclick="closeFeedbackModal()">Selesai</button>
+            </div>
+        </div>
+
+        <script>
+            // --- Web Audio API (Synthesized Sounds) ---
+            let audioCtx = null;
+            function initAudio() {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+
+            function playSound(type) {
+                initAudio();
+                if (!audioCtx) return;
+                const now = audioCtx.currentTime;
+
+                if (type === 'pour') {
+                    let bufferSize = audioCtx.sampleRate * 0.8;
+                    let buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                    let data = buffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+                    let noise = audioCtx.createBufferSource();
+                    noise.buffer = buffer;
+                    let filter = audioCtx.createBiquadFilter();
+                    filter.type = 'bandpass';
+                    filter.frequency.setValueAtTime(800, now);
+
+                    let gain = audioCtx.createGain();
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+
+                    noise.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    noise.start(now);
+                } else if (type === 'bubble') {
+                    let osc = audioCtx.createOscillator();
+                    let gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(300 + Math.random() * 200, now);
+                    osc.frequency.exponentialRampToValueAtTime(150, now + 0.15);
+
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                } else if (type === 'explosion') {
+                    let osc = audioCtx.createOscillator();
+                    let gain = audioCtx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(120, now);
+                    osc.frequency.exponentialRampToValueAtTime(30, now + 1.5);
+
+                    gain.gain.setValueAtTime(0.5, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 1.5);
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 1.5);
+                } else if (type === 'success') {
+                    let notes = [523.25, 659.25, 783.99, 1046.50];
+                    notes.forEach((freq, idx) => {
+                        let osc = audioCtx.createOscillator();
+                        let gain = audioCtx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, now + (idx * 0.1));
+
+                        gain.gain.setValueAtTime(0.25, now + (idx * 0.1));
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + (idx * 0.1) + 0.3);
+
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now + (idx * 0.1));
+                        osc.stop(now + (idx * 0.1) + 0.3);
+                    });
+                } else if (type === 'wrong') {
+                    let osc = audioCtx.createOscillator();
+                    let gain = audioCtx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(200, now);
+                    osc.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                }
+            }
+
+            // --- Game Logic & State ---
+            const correctSequence = ['soda', 'pewarna', 'sabun', 'cuka'];
+            const optimalValues = { 'soda': 80, 'pewarna': 1, 'sabun': 45, 'cuka': 300 };
+            
+            let userSequence = [];
+            let userQuantities = {};
+            let currentStep = 1;
+            let contents = [];
+            let selectedMaterialKey = '';
+            let isAnimating = false;
+            let hasError = false;
+
+            const materialMeta = {
+                'soda': { name: "Soda Kue", color: "#ffffff", min: 10, max: 150, unit: "g" },
+                'pewarna': { name: "Pewarna Makanan", color: "#e91e63", min: 1, max: 5, unit: "ml" },
+                'sabun': { name: "Sabun Cuci Piring", color: "#00bcd4", min: 10, max: 100, unit: "ml" },
+                'cuka': { name: "Cuka", color: "#dcedc8", min: 50, max: 500, unit: "ml" }
+            };
+
+            function openSliderModal(type) {
+                if (isAnimating) return;
+                selectedMaterialKey = type;
+                const meta = materialMeta[type];
+
+                document.getElementById('modalTitle').innerText = `Takaran: ${meta.name}`;
+                document.getElementById('modalDesc').innerText = `Atur jumlah ${meta.name.toLowerCase()} yang akan dituangkan.`;
+                
+                const slider = document.getElementById('materialSlider');
+                slider.min = meta.min;
+                slider.max = meta.max;
+                slider.value = Math.floor((meta.min + meta.max) / 2);
+                document.getElementById('sliderLabel').innerHTML = `Jumlah (${meta.unit}): <span class="slider-value" id="sliderValDisplay">${slider.value}</span>`;
+
+                document.getElementById('sliderModal').classList.add('active');
+            }
+
+            function updateSliderDisplay(val) {
+                document.getElementById('sliderValDisplay').innerText = val;
+            }
+
+            function confirmMaterial() {
+                document.getElementById('sliderModal').classList.remove('active');
+                const qty = parseInt(document.getElementById('materialSlider').value);
+                executePouring(selectedMaterialKey, qty);
+            }
+
+            function executePouring(type, qty) {
+                isAnimating = true;
+                const meta = materialMeta[type];
+                userSequence.push(type);
+                userQuantities[type] = qty;
+
+                if (type !== correctSequence[currentStep - 1]) {
+                    hasError = true;
+                }
+
+                document.getElementById('beakerContent').setAttribute("fill", meta.color);
+                document.getElementById('fallingParticle').style.background = meta.color;
+
+                const pouringContainer = document.getElementById('pouringContainer');
+                const fallingParticle = document.getElementById('fallingParticle');
+
+                pouringContainer.classList.remove('animate-pour');
+                fallingParticle.classList.remove('animate-particle');
+                void pouringContainer.offsetWidth;
+
+                pouringContainer.classList.add('animate-pour');
+                fallingParticle.classList.add('animate-particle');
+
+                playSound('pour');
+                setTimeout(() => playSound('bubble'), 500);
+
+                const btn = document.getElementById('btn-' + type);
+                btn.disabled = true;
+                btn.style.opacity = "0.4";
+                btn.style.cursor = "not-allowed";
+
+                setTimeout(() => {
+                    contents.push(`${meta.name} (${qty}${meta.unit})`);
+                    document.getElementById('statusText').innerText = "Isi Kawah Gunung: " + contents.join(", ");
+                    currentStep++;
+
+                    if (currentStep <= 4) {
+                        if (hasError) {
+                            const instr = document.getElementById('instructionText');
+                            instr.style.background = "rgba(211, 47, 47, 0.25)";
+                            instr.style.borderColor = "#f44336";
+                            instr.innerText = `⚠️ Peringatan: Urutan bahan kurang tepat! Lanjutkan sisa bahan...`;
+                        } else {
+                            document.getElementById('instructionText').innerText = `Langkah ${currentStep}: Pilih bahan selanjutnya!`;
+                        }
+                        isAnimating = false;
+                    } else {
+                        evaluateResults();
+                    }
+                }, 1200);
+            }
+
+            function evaluateResults() {
+                let precisionScore = 0;
+                ['soda', 'pewarna', 'sabun', 'cuka'].forEach(k => {
+                    let diff = Math.abs(userQuantities[k] - optimalValues[k]);
+                    if (diff <= 15) precisionScore += 25;
+                    else if (diff <= 50) precisionScore += 10;
+                });
+
+                const expTitle = document.getElementById('expResultTitle');
+                const expDesc = document.getElementById('expResultDesc');
+                const badgeBox = document.getElementById('resultBadge');
+                const badgeDesc = document.getElementById('badgeDesc');
+
+                if (hasError) {
+                    expTitle.innerText = "🌋 Eksperimen Gagal Meletus!";
+                    expDesc.innerText = "Urutan bahan tidak sesuai prosedur ilmiah, sehingga gas CO2 gagal mendesak keluar!";
+                    badgeBox.innerText = "Gelar: 💥 Ilmuwan Ceroboh";
+                    badgeDesc.innerText = "Karena kesalahan urutan, reaksi kimia tidak menghasilkan tekanan yang diharapkan.";
+                    triggerFailureVisuals();
+                } else if (precisionScore >= 90) {
+                    expTitle.innerText = "🎉 Letusan Sempurna & Spektakuler!";
+                    expDesc.innerText = `Takaran sangat akurat (${precisionScore}%)! Reaksi asam-basa menghasilkan tekanan maksimum dan lava meluber sempurna.`;
+                    badgeBox.innerText = "Gelar: 🧪 Master Alchemist (Ahli Kimia)";
+                    badgeDesc.innerText = "Anda menguasai takaran kimia dengan presisi tingkat tinggi!";
+                    triggerEruptionVisuals();
+                } else {
+                    expTitle.innerText = "🌋 Gunung Meletus Cukup Baik";
+                    expDesc.innerText = `Urutan benar, namun takaran kurang presisi (${precisionScore}%). Semburan lava tidak terlalu tinggi.`;
+                    badgeBox.innerText = "Gelar: 🔬 Peneliti Pemula";
+                    badgeDesc.innerText = "Eksperimen berhasil, tetapi tingkat presisi takaran masih bisa ditingkatkan.";
+                    triggerEruptionVisuals(true);
+                }
+
+                setTimeout(() => {
+                    document.getElementById('explosionResultModal').classList.add('active');
+                }, 2500);
+            }
+
+            function openBadgeModal() {
+                document.getElementById('explosionResultModal').classList.remove('active');
+                document.getElementById('badgeModal').classList.add('active');
+                playSound('success'); // Efek suara spektakuler saat pop-up gelar muncul
+            }
+
+            function triggerEruptionVisuals(isWeak = false) {
+                playSound('explosion');
+                const internalMagma = document.getElementById('internalMagma');
+                const eruptionFountain = document.getElementById('eruptionFountain');
+                const lavaOverflow = document.getElementById('lavaOverflow');
+                const smokeCloud = document.getElementById('smokeCloud');
+                const scienceBox = document.getElementById('scienceBox');
+
+                internalMagma.style.strokeWidth = isWeak ? "8px" : "14px";
+                internalMagma.style.opacity = "1";
+
+                setTimeout(() => {
+                    eruptionFountain.classList.add('active');
+                    lavaOverflow.classList.add('active');
+                    smokeCloud.classList.add('active');
+                    scienceBox.style.display = 'block';
+                }, 300);
+            }
+
+            function triggerFailureVisuals() {
+                const status = document.getElementById('statusText');
+                status.innerText = "❌ Reaksi Kimia Gagal Terjadi di Kawah.";
+                document.getElementById('resetBtn').style.display = 'block';
+                isAnimating = false;
+            }
+
+            function nextToQuiz() {
+                document.getElementById('badgeModal').classList.remove('active');
+                openQuizModal();
+            }
+
+            function openQuizModal() {
+                const quizModal = document.getElementById('quizModal');
+                const optionsBox = document.getElementById('quizOptions');
+                optionsBox.innerHTML = '';
+
+                const currentQ = {
+                    q: "Gas apakah yang dihasilkan dari reaksi pencampuran soda kue (basa) dan cuka (asam)?",
+                    options: [
+                        "A. Karbon Dioksida (CO2)",
+                        "B. Oksigen Murni (O2)",
+                        "C. Hidrogen (H2)"
+                    ],
+                    answer: 0
+                };
+
+                document.getElementById('quizQuestion').innerText = currentQ.q;
+
+                currentQ.options.forEach((opt, idx) => {
+                    let btn = document.createElement('button');
+                    btn.className = 'quiz-option-btn';
+                    btn.innerText = opt;
+                    btn.onclick = () => {
+                        quizModal.classList.remove('active');
+                        showQuizFeedback(idx === currentQ.answer);
+                    };
+                    optionsBox.appendChild(btn);
+                });
+
+                quizModal.classList.add('active');
+            }
+
+            function showQuizFeedback(isCorrect) {
+                const feedbackModal = document.getElementById('quizFeedbackModal');
+                const title = document.getElementById('feedbackTitle');
+                const desc = document.getElementById('feedbackDesc');
+
+                if (isCorrect) {
+                    playSound('success');
+                    title.innerText = "🎉 Jawaban Benar!";
+                    title.style.color = "#4caf50";
+                    desc.innerText = "Benar! Gas Karbon Dioksida (CO2) memberikan tekanan dorong yang membuat lava menyembur dengan kuat.";
+                } else {
+                    playSound('wrong');
+                    title.innerText = "❌ Jawaban Kurang Tepat";
+                    title.style.color = "#f44336";
+                    desc.innerText = "Kurang tepat. Jawaban yang benar adalah Karbon Dioksida (CO2).";
+                }
+
+                feedbackModal.classList.add('active');
+            }
+
+            function closeFeedbackModal() {
+                document.getElementById('quizFeedbackModal').classList.remove('active');
+                document.getElementById('resetBtn').style.display = 'block';
+                isAnimating = false;
+            }
+
+            function resetGame() {
+                currentStep = 1;
+                contents = [];
+                userSequence = [];
+                userQuantities = {};
+                hasError = false;
+
+                document.getElementById('instructionText').innerText = "Langkah 1: Pilih bahan pertama dan tentukan takarannya!";
+                document.getElementById('instructionText').style.background = "rgba(255, 152, 0, 0.15)";
+                document.getElementById('instructionText').style.borderColor = "var(--secondary)";
+                
+                document.getElementById('statusText').innerText = "Isi Kawah Gunung: Kosong";
+                
+                document.getElementById('eruptionFountain').classList.remove('active');
+                document.getElementById('lavaOverflow').classList.remove('active');
+                document.getElementById('smokeCloud').classList.remove('active');
+                
+                const internalMagma = document.getElementById('internalMagma');
+                internalMagma.style.strokeWidth = "0px";
+                internalMagma.style.opacity = "0";
+
+                document.getElementById('scienceBox').style.display = 'none';
+                document.getElementById('resetBtn').style.display = 'none';
+
+                const buttons = ['soda', 'pewarna', 'sabun', 'cuka'];
+                buttons.forEach(b => {
+                    const btn = document.getElementById('btn-' + b);
+                    btn.disabled = false;
+                    btn.style.opacity = "1";
+                    btn.style.cursor = "pointer";
+                });
+            }
+        </script>
+    </body>
+    </html>
